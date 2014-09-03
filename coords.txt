@@ -1,0 +1,10 @@
+59.3256954 Latitude
+18.0718675 Longitude
+
+
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:road|visibility:off
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off
+
+Wohoo!
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off&style=feature:water|element:labels|visibility:off
