@@ -6,7 +6,10 @@ import json
 
 #for getting the google image
 import Image
-import StringIO
+import cStringIO
+
+#
+import os
 
 class ImageData(object):
     
@@ -152,7 +155,15 @@ def get_binary_image_info(metadata,google_key=None):
     url = "https://maps.googleapis.com/maps/api/staticmap?center="
     url += str(metadata.center[0]) + "," + str(metadata.center[1])
     url += "&zoom=" + str(metadata.zoom)
-    url += "&size=" + str(metadata.size[0]) + "x" + str(metadata.size[1])
+    
+    #google creates a watermark on the image that is about 27 pixels height
+    #add 60 pixels to the query height, and then cut it away.
+    #in case the height is odd, the extra pixel is placed on top.
+    #Then only get 59 extra pixels.
+    extrapixel = (metadata.size[1]%2)
+    bigheight = metadata.size[1]+(google_logo_size*2)-extrapixel
+    url += "&size=" + str(metadata.size[0]) + "x" + str(bigheight)
+    
     
     #add style - strip map of everything
     #remove transits and roads
@@ -165,8 +176,13 @@ def get_binary_image_info(metadata,google_key=None):
     url += "&style=feature:water|element:labels|visibility:off"
     #set water color
     url += "&style=feature:water|hue:A9CAFD"
-    f = StringIO.StringIO(urllib2.urlopen(url).read())
-    img = Image.open(f).convert("1")
+    
+    f = cStringIO.StringIO(urllib2.urlopen(url).read())
+    img = Image.open(f)
+    #crop image to remove google logo
+    img = img.crop((0,google_logo_size-extrapixel,img.size[0],img.size[1]-google_logo_size))
+    #convert to binary format
+    img = img.convert("1")
     
     bid = BinaryImageData(metadata,img)
    
@@ -194,8 +210,39 @@ def get_key_from_file(filename):
         key = f.read().strip()
         f.close()
         return key
-    
         
+def get_dgi_string(bid):
+    sb = cStringIO.StringIO()
+    #bb
+    #center
+    #zoom
+    #size
+    #image
+    sb.write("bounding_box_swne: %s %s %s %s"%bid.bounding_box)
+    sb.write(os.linesep)
+    #bb[0] + " " + bb[1] + " " + bb[2] + " " + bb[3] + os.linesep)
+    
+    sb.write("center_lat_lon: %s %s"%bid.center)
+    sb.write(os.linesep)
+    
+    sb.write("zoom: " + str(bid.zoom) + os.linesep)
+    
+    sb.write("size_wh: %s %s"%bid.size)
+    sb.write(os.linesep)
+    
+    im = bid.binary_img
+    w,h = im.size
+    for j in range(h):
+        for i in range(w):
+            sb.write(str(im.getpixel((i,j))) + " ")
+        sb.write(os.linesep)
+    
+    return sb.getvalue()
+    
+    
+google_logo_size=30
+google_max_dim = 640
+    
 #####################
 #Main
 #####################
@@ -213,28 +260,40 @@ if __name__ == "__main__":
         help="Size of map, in pixels in format width,height. Both must be integers. Default is 500,500.")
     parser.add_argument("zoom",nargs='?',type=int,default=13,
         help="Zoom level, must be an integer. 0 is view of full planet, 20 is very zoomed in. Default is 13.")
-    parser.add_argument("-s","--save",action='store_true',
-        help="if we want to save the bnary image")
+    parser.add_argument("-s","--save",nargs=1,default="binary_img.png",
+        help="Save binary image to the given file. Note:format will always be PNG.")
+    parser.add_argument("-o","--output",nargs=1,
+        help="Specify file to output data to. Default it stdout otherwise.")
         
     args = parser.parse_args()
-    
-    #import pdb
-    #pdb.set_trace()
     
     #convert to numbers
     location = string_numbers_to_tuple(args.location)
     size = string_numbers_to_tuple(args.size,is_int=True)
+    #check size
+    if size[1] > google_max_dim-(google_logo_size*2) or size[1] < 100 or \
+                    size[0] > google_max_dim or size[0] < 100:
+        print "Error: image width must be between 100 and "+str(google_max_dim)+\
+                ", image height must be between 100 and " + str(google_max_dim-2*google_logo_size)
+        sys.exit()
+    
     zoom = args.zoom
     key = get_key_from_file(args.bing_key)
+    
     
     binary_image_data = construct_binary_image(location,size,zoom,key)
     
     if args.save:
-        binary_image_data.binary_img.save("binary_img.png")
+        binary_image_data.binary_img.save(args.save[0],"png")
+        
+    #handle output data
+    out = get_dgi_string(binary_image_data)
+    if args.output:
+        f = open(args.output[0],"w")
+        f.write(out)
+        f.close()
+        print "Output data written to file " + args.output[0]
+    else:
+        print out
 
-    print binary_image_data.bounding_box
-    print binary_image_data.center
-    print binary_image_data.size
-    print binary_image_data.zoom    
-    print binary_image_data.binary_img
-    print "success!"
+    
