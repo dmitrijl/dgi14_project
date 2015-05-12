@@ -53,7 +53,8 @@ def combined_polys(filenames):
     pfile.close()
 
 def triangulate(f):
-    s = subprocess.check_output(["tri.exe","-pc",f])
+    #s = subprocess.check_output(["tri.exe","-pc",f])
+    s = subprocess.check_output(["triangle","-pc",f])
     print s
     
 if __name__ == "__main__":
