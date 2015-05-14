@@ -2,6 +2,7 @@
 from laspy import file
 import os
 import subprocess
+import sys
 
 def create_poly_file(lasfilename, v_c = -1):
     lasf = file.File(lasfilename, mode = "r")
@@ -52,18 +53,32 @@ def combined_polys(filenames):
         r.close()
     pfile.close()
 
-def triangulate(f):
-    #s = subprocess.check_output(["tri.exe","-pc",f])
-    s = subprocess.check_output(["triangle","-pc",f])
+def triangulate(f,q = False):
+    if q:
+        s = subprocess.check_output(["tri.exe","-pqc",f])
+    else:
+        s = subprocess.check_output(["tri.exe","-pc",f])
+    #s = subprocess.check_output(["triangle","-pc",f])
     print s
     
 if __name__ == "__main__":
-    create_poly_file("a.las")
+    if len(sys.argv) >= 2:
+        i = int(sys.argv[1])
+    else:
+        i = -1
+    
+    q = False
+    if len(sys.argv) >= 3:
+        if sys.argv[2] == "q":
+            q = True
+    
+    
+    create_poly_file("a.las",i)
     #create_poly_file("b.las")
     #create_poly_file("c.las")
     #create_poly_file("d.las")
     print "poly file created, triangulate now"
-    triangulate("a")
+    triangulate("a",q)
     
     
      
