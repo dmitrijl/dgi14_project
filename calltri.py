@@ -1,8 +1,75 @@
 
 from laspy import file
+from math import *
 import os
 import subprocess
 import sys
+import numpy
+
+
+#Arguments: x, y, z and classification arrays of a set of nodes
+def downsample(nlx, nly, nlz, nlc):
+    #Find the minimum and maximum coordinates
+    xmax = ymax = -float("inf")
+    xmin = ymin = float("inf")
+    nr_nodes = len(nlx)
+    for i in xrange(nr_nodes):
+        xmax = max(xmax, nlx[i])
+        ymax = max(ymax, nly[i])
+        xmin = min(xmin, nlx[i])
+        ymin = min(ymin, nly[i])
+    xdiff = xmax-xmin
+    ydiff = ymax-ymin
+    
+    #Create a voxelgrid
+    #Number of cells, and their size, in each dimension:
+    vg_cellcount_x = 250
+    vg_cellcount_y = 250    #250*250 = 62500 < 65000
+    vg_cellsize_x = (xmax-xmin)/vg_cellcount_x
+    vg_cellsize_y = (ymax-ymin)/vg_cellcount_y
+    vgx = alloc_matrix_list(vg_cellcount_y, vg_cellcount_x)
+    vgy = alloc_matrix_list(vg_cellcount_y, vg_cellcount_x)
+    vgz = alloc_matrix_list(vg_cellcount_y, vg_cellcount_x)
+    vgc = alloc_matrix_list(vg_cellcount_y, vg_cellcount_x)
+    vgx_avg = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
+    vgy_avg = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
+    vgz_avg = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
+    vgc_avg = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
+    
+    #Put the nodes in their corresponding cell
+    for i in xrange(nr_nodes):
+        xc = vg_cellcount_x*(nlx[i]-xmin)/xdiff
+        xc = trunc(xc)
+        xc = max(xc, 0) #Prevent out of bounds
+        xc = min(xc, (vg_cellcount_x-1))    #Prevent out of bounds
+        yc = vg_cellcount_y*(nly[i]-ymin)/ydiff
+        yc = trunc(yc)
+        yc = max(yc, 0) #Prevent out of bounds
+        yc = min(yc, (vg_cellcount_y-1))    #Prevent out of bounds
+        vgx[yc][xc].append(nlx[i])
+        vgy[yc][xc].append(nly[i])
+        vgz[yc][xc].append(nlz[i])
+        vgc[yc][xc].append(nlc[i])
+    
+    #Compute average in each cell
+    for i in xrange(vg_cellcount_y):
+        for j in xrange(vg_cellcount_x):
+            node_count = len(vgx[i][j])
+            vgx_avg[i][j] = sum(vgx[i][j])/node_count
+            vgy_avg[i][j] = sum(vgy[i][j])/node_count
+            vgz_avg[i][j] = sum(vgz[i][j])/node_count
+            #TODO special case for vgc
+            
+    return (vgx_avg, vgy_avg, vgz_avg, vgc_avg)
+    #TODO not tested yet
+    
+
+def alloc_matrix_list(W, H):
+    return [ [ [] for i in range(W) ] for j in range(H) ]
+
+def alloc_matrix(W, H):
+    return [ [ 0 for i in range(W) ] for j in range(H) ]
+
 
 def create_poly_file(lasfilename, v_c = -1):
     lasf = file.File(lasfilename, mode = "r")
@@ -55,10 +122,11 @@ def combined_polys(filenames):
 
 def triangulate(f,q = False):
     if q:
-        s = subprocess.check_output(["tri.exe","-pqc",f])
+        #s = subprocess.check_output(["tri.exe","-pqc",f])
+        s = subprocess.check_output(["triangle","-pqc",f])
     else:
-        s = subprocess.check_output(["tri.exe","-pc",f])
-    #s = subprocess.check_output(["triangle","-pc",f])
+        #s = subprocess.check_output(["tri.exe","-pc",f])
+        s = subprocess.check_output(["triangle","-pc",f])
     print s
     
 if __name__ == "__main__":
