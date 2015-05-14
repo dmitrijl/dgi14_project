@@ -27,9 +27,9 @@ public class readmesh : MonoBehaviour {
 		Char[] delim = {' '};
 
 
-
+		string polyname = "res";
 		//Read poly file
-		StreamReader inp_stm = new StreamReader(dir_path + "a.1.poly");
+		StreamReader inp_stm = new StreamReader(dir_path + polyname + ".1.poly");
 		Debug.Log("Reading POLY file!");
 		inp_ln = inp_stm.ReadLine( );	//Read line about vertices
 		words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
@@ -86,7 +86,7 @@ public class readmesh : MonoBehaviour {
 
 		//Read node file (if necessary)
 		if (sepNodeFile) {
-			inp_stm = new StreamReader(dir_path + "a.1.node");
+			inp_stm = new StreamReader(dir_path + polyname + ".1.node");
 			Debug.Log("Reading NODE file!");
 			inp_ln = inp_stm.ReadLine( );	//Read line about vertices
 			words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
@@ -121,7 +121,7 @@ public class readmesh : MonoBehaviour {
 
 
 		//Read ele file (triangles)
-		inp_stm = new StreamReader(dir_path + "a.1.ele");
+		inp_stm = new StreamReader(dir_path + polyname + ".1.ele");
 		Debug.Log("Reading ELE file!");
 		inp_ln = inp_stm.ReadLine ();
 		string[] meta = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
