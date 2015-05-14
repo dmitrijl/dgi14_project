@@ -12,7 +12,8 @@ public class readmesh : MonoBehaviour {
 		//Debug.Log("Running script!!!\n");
 		string dir_path;
 		string inp_ln;
-		dir_path = @"C:\Users\Dmitrij\Documents\KTH\dgi\TriangleUnity\Assets\polyfiles\";	//Change as appropriate
+		//dir_path = @"C:\Users\Dmitrij\Documents\KTH\dgi\TriangleUnity\Assets\polyfiles\";	//Change as appropriate
+		dir_path = @"Assets\polyfiles\";	//Change as appropriate
 		int lc = 0;
 		bool sepNodeFile = false;
 		string[] words;

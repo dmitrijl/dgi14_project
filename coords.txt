@@ -1,3 +1,4 @@
+
 59.3256954 Latitude
 18.0718675 Longitude
 
@@ -27,3 +28,4 @@ YES:
 https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=350x350&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off&style=feature:water|element:labels|visibility:off
 dev.virtualearth.net/REST/v1/Imagery/Map/Road/59.3256954,18.071867/13?key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
 https://dev.virtualearth.net/REST/v1/Imagery/Map/Aerial/59.3256954,18.071867/13?mapMetadata=1&o=xml&key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
+
