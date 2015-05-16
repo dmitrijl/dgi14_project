@@ -15,13 +15,13 @@ def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
     nr_nodes = len(nlx)
     #for i in xrange(nr_nodes):
     xmax = max(nlx)
-    print "xmax done"
+    print "xmax done: %.5f"%xmax
     ymax = max(nly)
-    print "ymax done"
+    print "ymax done: %.5f"%ymax
     xmin = min(nlx)
-    print "xmin done"
+    print "xmin done: %.5f"%xmin
     ymin = min(nly)
-    print "ymax done"
+    print "ymax done: %.5f"%ymin
     xdiff = xmax-xmin
     ydiff = ymax-ymin
     
@@ -34,7 +34,7 @@ def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
     vgx = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
     vgy = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
     vgz = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
-    vgc = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
+    vgc = alloc_matrix_4list(vg_cellcount_y, vg_cellcount_x)
     vgb = alloc_matrix(vg_cellcount_y, vg_cellcount_x)
     
     
@@ -60,15 +60,22 @@ def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
         vgx[yc][xc] += nlx[i]
         vgy[yc][xc] += nly[i]
         vgz[yc][xc] += nlz[i]
-        vgc[yc][xc] += nlc[i]        
-        vgb[yc][xc] += 1        
+        if nlc[i] == 1: #Unclassified
+            vgc[yc][xc][0] += 1
+        elif nlc[i] == 2:   #Ground
+            vgc[yc][xc][1] += 1
+        elif nlc[i] == 9:   #Water
+            vgc[yc][xc][2] += 1
+        elif nlc[i] == 11:  #Bridge
+            vgc[yc][xc][3] += 1
+        vgb[yc][xc] += 1
         
         
         #vgx[yc][xc].append(nlx[i])
         #vgy[yc][xc].append(nly[i])
         #vgz[yc][xc].append(nlz[i])
         #vgc[yc][xc].append(nlc[i])
-        if i%100000 == 0:
+        if i%500000 == 0:
             print "placed %i nodes in bins"%i
     
     #Compute average in each cell
@@ -79,6 +86,19 @@ def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
                 vgx_avg.append(vgx[i][j]/node_count)
                 vgy_avg.append(vgy[i][j]/node_count)
                 vgz_avg.append(vgz[i][j]/node_count)
+                
+                vgc_argmax = 2   #Ground
+                vgc_max = vgc[i][j][1]
+                if vgc[i][j][2] > vgc_max:
+                    vgc_argmax = 9   #Water
+                    vgc_max = vgc[i][j][2]
+                if vgc[i][j][3] > vgc_max:
+                    vgc_argmax = 11  #Bridge
+                    vgc[i][j][3]
+                """if vgc[i][j][0] > vgc_max:
+                    vgc_argmax = 1  #Unclassified (can be ignored)
+                    vgc[i][j][0]"""
+                vgc_avg.append(vgc_argmax)
                 
                 #vgx_avg[i][j] = sum(vgx[i][j])/node_count
                 #vgy_avg[i][j] = sum(vgy[i][j])/node_count
@@ -97,7 +117,11 @@ def alloc_matrix_2list(W, H):
 
 def alloc_matrix(W, H):
     return [ [ 0 for i in range(W) ] for j in range(H) ]
-    
+
+def alloc_matrix_4list(W, H):
+    return [ [ [0, 0, 0, 0] for i in range(W) ] for j in range(H) ]
+
+
 def las_to_xyzc(filename, v_c = -1):
     #lasf = file.File(filename, mode = "r")
     #_files_open.append(lasf)
@@ -118,9 +142,9 @@ def write_xyzc_to_poly(x,y,z,c, name = "res.poly"):
     #TODO do something with c
     v_count = len(x)
     pfile = open(name, "w")
-    pfile.write("%i 2 1 0\n" % v_count)
+    pfile.write("%i 2 2 0\n" % v_count)
     for i in xrange(v_count):
-        pfile.write("%i %s %s %s\n" % (i+1,x[i],y[i],z[i]))
+        pfile.write("%i %.10f %.10f %.10f %i\n" % (i+1,x[i],y[i],z[i],c[i]))
         
     pfile.write("0 0\n")
     pfile.write("0\n")
@@ -177,15 +201,21 @@ def combined_polys(filenames):
     pfile.close()
 
 def triangulate(f,q = False):
+    executable_name = "triangle"
+    #executable_name = "tri.exe"
     if q:
-        s = subprocess.check_output(["tri.exe","-pqc",f])
-        #s = subprocess.check_output(["triangle","-pqc",f])
+        s = subprocess.check_output([executable_name,"-pqc",f])
     else:
-        s = subprocess.check_output(["tri.exe","-pc",f])
-        #s = subprocess.check_output(["triangle","-pc",f])
+        s = subprocess.check_output([executable_name,"-pc",f])
     print s
-    
+
+
+
+
 if __name__ == "__main__":
+    print "arguments:"
+    print sys.argv
+    
     if len(sys.argv) >= 2:
         i = int(sys.argv[1])
     else:
@@ -195,12 +225,13 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         if sys.argv[2] == "q":
             q = True
+            print "q option enabled"
     
     las_files = [
         "a.las",
-        #"b.las",
-        #"c.las",
-        #"d.las",
+        "b.las",
+        "c.las",
+        "d.las",
     ]
     
     x = []
@@ -213,14 +244,20 @@ if __name__ == "__main__":
     for f in las_files:
         lasf = file.File(f, mode = "r")
         open_files.append(lasf)
-        x,y,z,c = las_to_xyzc(lasf,i)
+        #x,y,z,c = las_to_xyzc(lasf,i)
+        x_t, y_t, z_t, c_t = las_to_xyzc(f,i)
+        x = numpy.concatenate((x, x_t))
+        y = numpy.concatenate((y, y_t))
+        z = numpy.concatenate((z, z_t))
+        c = numpy.concatenate((c, c_t))
         """x_t, y_t, z_t, c_t = las_to_xyzc(f,i)
         x.extend(x_t)
         y.extend(y_t)
         z.extend(z_t)
         c.extend(c_t)
         """
-    print "Downsampling"
+    
+    print "Downsampling on %i nodes"%(len(x))
     xd,yd,zd,cd = downsample(x,y,z,c)
     print "Downsampling done"
     
