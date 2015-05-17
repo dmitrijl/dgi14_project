@@ -6,6 +6,9 @@ using System;
 public class readmesh : MonoBehaviour {
 
 	public GameObject plane;
+	public string filesetName;
+	public float x_base;
+	public float z_base;
 
 	// Use this for initialization
 	void Start () {
@@ -13,7 +16,7 @@ public class readmesh : MonoBehaviour {
 		string dir_path;
 		string inp_ln;
 		//dir_path = @"C:\Users\Dmitrij\Documents\KTH\dgi\TriangleUnity\Assets\polyfiles\";	//Change as appropriate
-		dir_path = @"Assets\polyfiles\";	//Change as appropriate
+		dir_path = @"Assets\polyfiles\abcd\";	//Change as appropriate
 		int lc = 0;
 		bool sepNodeFile = false;
 		string[] words;
@@ -27,7 +30,7 @@ public class readmesh : MonoBehaviour {
 		Char[] delim = {' '};
 
 
-		string polyname = "res";
+		string polyname = filesetName;
 		//Read poly file
 		StreamReader inp_stm = new StreamReader(dir_path + polyname + ".1.poly");
 		Debug.Log("Reading POLY file!");
@@ -185,8 +188,8 @@ public class readmesh : MonoBehaviour {
 		for (int i = 0; i < vertices.Length; i++) {
 			//vertices[i].x = ((vertices[i].x - verticesMinX)*newmax)/(verticesMaxX-verticesMinX);
 			//vertices[i].z = ((vertices[i].z - verticesMinZ)*newmax)/(verticesMaxZ-verticesMinZ);
-			vertices[i].x = (vertices[i].x - verticesMinX);
-			vertices[i].z = (vertices[i].z - verticesMinZ);
+			vertices[i].x = (vertices[i].x - verticesMinX) + x_base;
+			vertices[i].z = (vertices[i].z - verticesMinZ) + z_base;
 			//vertices[i].y = -vertices[i].y;
 		}
 
@@ -230,9 +233,9 @@ public class readmesh : MonoBehaviour {
 		Debug.Log ("numer of vertices after recalculation: " + mesh.vertices.Length);
 		Debug.Log ("number of triangles after recalculation: " + (mesh.triangles.Length/3.0f));
 		Debug.Log ("number of normals after recalculation: " + mesh.normals.Length);
-		for (int i = 0; i < vertices.Length; i++) {
+		/*for (int i = 0; i < vertices.Length; i++) {
 			vertices[i].x = - vertices[i].x;
-		}
+		}*/
 		/*
 		Vector3[] normals = mesh.normals;
 		for (int i = 0; i < normals.Length; i++) {
