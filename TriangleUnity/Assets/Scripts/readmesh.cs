@@ -187,8 +187,15 @@ public class readmesh : MonoBehaviour {
 			//vertices[i].z = ((vertices[i].z - verticesMinZ)*newmax)/(verticesMaxZ-verticesMinZ);
 			vertices[i].x = (vertices[i].x - verticesMinX);
 			vertices[i].z = (vertices[i].z - verticesMinZ);
-			vertices[i].y = -vertices[i].y;
+			//vertices[i].y = -vertices[i].y;
 		}
+
+		//for (int i = 0; i < vertices.Length; i++) {
+		//	vertices[i].x = - vertices[i].x;
+		//}
+
+		Debug.Log ("Max X: " + (verticesMaxX - verticesMinX));
+		Debug.Log ("Max Z: " + (verticesMaxZ - verticesMinZ));
 		/*
 		Array.Reverse (vertices);
 		int l = vertices.Length-1;
@@ -202,6 +209,7 @@ public class readmesh : MonoBehaviour {
 		//plane.GetComponent<MeshFilter>().mesh = mesh;
 		mesh.vertices = vertices;
 		//mesh.uv = UV;
+		Array.Reverse (triangles);
 		mesh.triangles = triangles;
 
 		Vector2[] uvs = new Vector2[vertices.Length];
@@ -222,7 +230,9 @@ public class readmesh : MonoBehaviour {
 		Debug.Log ("numer of vertices after recalculation: " + mesh.vertices.Length);
 		Debug.Log ("number of triangles after recalculation: " + (mesh.triangles.Length/3.0f));
 		Debug.Log ("number of normals after recalculation: " + mesh.normals.Length);
-
+		for (int i = 0; i < vertices.Length; i++) {
+			vertices[i].x = - vertices[i].x;
+		}
 		/*
 		Vector3[] normals = mesh.normals;
 		for (int i = 0; i < normals.Length; i++) {
