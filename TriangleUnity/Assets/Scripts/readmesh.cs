@@ -8,17 +8,27 @@ public class readmesh : MonoBehaviour {
 
 	public GameObject plane;
 	public string filesetName;
+	public string fileName;
 	public float x_base;
 	public float z_base;
 	public bool save_as_asset;
+	public bool read_mesh;
 
 	// Use this for initialization
 	void Start () {
+		Mesh mesh;
 		//Debug.Log("Running script!!!\n");
+		if (!read_mesh) {
+			Debug.Log("Skipped reading mesh from file.\n");
+			Debug.Log("Loading from asset database...\n");
+			mesh = AssetDatabase.LoadAssetAtPath("Assets/Prefabs/Stadsholmen/res.asset", typeof(Mesh)) as Mesh;
+			plane.GetComponent<MeshFilter>().mesh = mesh;
+			return;
+		}
 		string dir_path;
 		string inp_ln;
 		//dir_path = @"C:\Users\Dmitrij\Documents\KTH\dgi\TriangleUnity\Assets\polyfiles\";	//Change as appropriate
-		dir_path = @"Assets\polyfiles\abcd\";	//Change as appropriate
+		dir_path = "Assets/polyfiles/";	//Change as appropriate
 		int lc = 0;
 		bool sepNodeFile = false;
 		string[] words;
@@ -30,9 +40,10 @@ public class readmesh : MonoBehaviour {
 		Vector2[] UV = new Vector2[0];
 		int[] triangles;
 		Char[] delim = {' '};
+		int[] classifications = new int[0];
 
 
-		string polyname = filesetName;
+		string polyname = filesetName + "/" + fileName;
 		//Read poly file
 		StreamReader inp_stm = new StreamReader(dir_path + polyname + ".1.poly");
 		Debug.Log("Reading POLY file!");
@@ -41,12 +52,14 @@ public class readmesh : MonoBehaviour {
 		int.TryParse(words[0], out nrVert);
 		//int.TryParse(words[1], out dim);
 		int.TryParse(words[2], out nrAttr);
+		--nrAttr;	//To compensate for the fact that height is an attribute
 		int.TryParse(words[3], out nrBM);
 
 		vertices = new Vector3[nrVert];
 		if (nrVert == 0) {
 			sepNodeFile = true;	//Separate node file exists
 		} else {
+			classifications = new int[nrVert];
 			for (int i = 0; i<nrVert; ++i) {
 				inp_ln = inp_stm.ReadLine ();	//Read vertex line
 				words = inp_ln.Split (delim, StringSplitOptions.RemoveEmptyEntries);
@@ -54,10 +67,11 @@ public class readmesh : MonoBehaviour {
 				float.TryParse (words [2], out vertices [i].y);
 				float.TryParse (words [3], out vertices [i].z);
 				float attr, bm;	//Dummy placeholders for now
-				for (int k = 3; k<3+nrAttr; ++k) {
+				for (int k = 4; k<4+nrAttr; ++k) {
 					float.TryParse (words [k], out attr);
+					classifications[i] = (int)attr;
 				}
-				for (int k = 3+nrAttr; k<3+nrAttr+nrBM; ++k) {
+				for (int k = 4+nrAttr; k<4+nrAttr+nrBM; ++k) {
 					float.TryParse (words [k], out bm);
 				}
 			}
@@ -98,9 +112,11 @@ public class readmesh : MonoBehaviour {
 			int.TryParse(words[0], out nrVert);
 			//int.TryParse(words[1], out dim);
 			int.TryParse(words[2], out nrAttr);
+			--nrAttr;	//To compensate for the fact that height is an attribute
 			int.TryParse(words[3], out nrBM);
 			
 			vertices = new Vector3[nrVert];
+			classifications = new int[nrVert];
 			
 			for (int i = 0;i<nrVert;++i) {
 				inp_ln = inp_stm.ReadLine( );	//Read vertex line
@@ -109,10 +125,11 @@ public class readmesh : MonoBehaviour {
 				float.TryParse(words[2], out vertices[i].z);
 				float.TryParse(words[3], out vertices[i].y);
 				float attr, bm;	//Dummy placeholders for now
-				for (int k = 3;k<3+nrAttr;++k) {
+				for (int k = 4;k<4+nrAttr;++k) {
 					float.TryParse(words[k], out attr);
+					classifications[i] = (int)attr;
 				}
-				for (int k = 3+nrAttr;k<3+nrAttr+nrBM;++k) {
+				for (int k = 4+nrAttr;k<4+nrAttr+nrBM;++k) {
 					float.TryParse(words[k], out bm);
 				}
 			}
@@ -209,7 +226,7 @@ public class readmesh : MonoBehaviour {
 		}
 		*/
 
-		Mesh mesh = new Mesh ();
+		mesh = new Mesh();
 		plane.GetComponent<MeshFilter>().mesh = mesh;
 		//plane.GetComponent<MeshFilter>().mesh = mesh;
 		mesh.vertices = vertices;
@@ -224,6 +241,38 @@ public class readmesh : MonoBehaviour {
 		}
 		mesh.uv = uvs;
 
+		//Colors
+		Color32[] colors = new Color32[vertices.Length];
+		for (int j = 0; j < vertices.Length; ++j) {
+			//colors[j] = Color.Lerp(Color.red, Color.green, vertices[j].y);	//Unity example
+			if (j < 100) {
+				Debug.Log("Classification: " + classifications[j]);
+			}
+			switch (classifications[j]) {
+			case 1:
+				//Unknown Do nothing for now
+				//Debug.LogError("Unknown classification: " + classifications[j]);
+				colors[j] = (Color32)Color.red;
+				break;
+			case 2:
+				//Ground
+				colors[j] = (Color32)Color.grey;
+				break;
+			case 9:
+				//Water
+				colors[j] = (Color32)Color.blue;
+				break;
+			case 11:
+				//Bridge
+				colors[j] = (Color32)Color.white;
+				break;
+			default:
+				//Debug.LogError("Unrecognized classification: " + classifications[j]);
+				colors[j] = (Color32)Color.yellow;
+				break;
+			}
+		}
+		mesh.colors32 = colors;
 
 		
 		
@@ -247,12 +296,14 @@ public class readmesh : MonoBehaviour {
 
 		*/
 		if (save_as_asset) {
-			AssetDatabase.CreateAsset(mesh, "Assets/Prefabs/"+ filesetName+".asset");
+			AssetDatabase.CreateFolder("Assets/Prefabs", filesetName);
+			AssetDatabase.CreateAsset(mesh, "Assets/Prefabs/" + polyname + ".asset");
 			AssetDatabase.SaveAssets();
+
 			//PrefabUtility.CreatePrefab (dir_path + filesetName + ".prefab",plane);
 			//plane.GetComponent<MeshFilter>().mesh = mesh;
 
-			UnityEngine.Object prefab = EditorUtility.CreateEmptyPrefab("Assets/Prefabs/"+ filesetName+".prefab");
+			UnityEngine.Object prefab = EditorUtility.CreateEmptyPrefab("Assets/Prefabs/" + polyname + ".prefab");
 			EditorUtility.ReplacePrefab(plane, prefab, ReplacePrefabOptions.ReplaceNameBased);
 		}
 		

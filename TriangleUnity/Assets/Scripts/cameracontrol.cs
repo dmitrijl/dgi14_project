@@ -82,5 +82,9 @@ public class cameracontrol : MonoBehaviour {
 		
 		if(Input.GetKey(KeyCode.E))
 			transform.Translate(Vector3.up * ms * Time.deltaTime);
+
+		if (Input.GetKeyDown(KeyCode.X))
+			transform.rotation *= Quaternion.Euler(-90, 0, 0);
+			//transform.Translate(Vector3.up * ms * Time.deltaTime);
 	}
 }

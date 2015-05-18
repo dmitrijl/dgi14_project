@@ -6,8 +6,23 @@ import subprocess
 import sys
 import numpy
 
+#Crop out an area within a certain bounding box.
+#Arguments: x, y, z and classification arrays of a set of nodes, and the bounding box.
+def crop(nlx, nly, nlz, nlc, (xmin, xmax, ymin, ymax)):
+    newnlx = []
+    newnly = []
+    newnlz = []
+    newnlc = []
+    nr_nodes = len(nlx)
+    for i in xrange(nr_nodes):
+        if nlx[i] >= xmin and nlx[i] <= xmax and nly[i] >= ymin and nly[i] <= ymax
+            newnlx.append(nlx[i])
+            newnly.append(nly[i])
+            newnlz.append(nlz[i])
+            newnlc.append(nlc[i])
+    return (newnlx, newnly, newnlz, newnlc)
 
-#Arguments: x, y, z and classification arrays of a set of nodes
+#Arguments: x, y, z and classification arrays of a set of nodes.
 def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
     #Find the minimum and maximum coordinates
     xmax = ymax = -float("inf")
@@ -21,7 +36,7 @@ def downsample(nlx, nly, nlz, nlc, vg_cellcount_x = 250, vg_cellcount_y = 250):
     xmin = min(nlx)
     print "xmin done: %.5f"%xmin
     ymin = min(nly)
-    print "ymax done: %.5f"%ymin
+    print "ymin done: %.5f"%ymin
     xdiff = xmax-xmin
     ydiff = ymax-ymin
     
@@ -257,16 +272,22 @@ if __name__ == "__main__":
         c.extend(c_t)
         """
     
+	print "%i nodes currently in the node set."%(len(x))
+	print "Cropping..."
+	croprect = (6579733+1.0/3.0, 6580733+1.0/3.0, 674133+1.0/3.0, 675133+1.0/3.0)
+    x,y,z,c = crop(x,y,z,c,croprect)
+    print "Cropping done. %i nodes still in the node set."%(len(x))
+	
     print "Downsampling on %i nodes"%(len(x))
-    xd,yd,zd,cd = downsample(x,y,z,c)
-    print "Downsampling done"
+    x,y,z,c = downsample(x,y,z,c)
+    print "Downsampling done. %i nodes still in the node set."%(len(x))
     
     for f in open_files:
         f.close()
     
     print "Creating res.poly"
     
-    write_xyzc_to_poly(xd,yd,zd,cd)
+    write_xyzc_to_poly(x,y,z,c)
     
     
     #create_poly_file("a.las",i)
