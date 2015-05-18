@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System.Collections;
 using System.IO;
 using System;
@@ -9,6 +10,7 @@ public class readmesh : MonoBehaviour {
 	public string filesetName;
 	public float x_base;
 	public float z_base;
+	public bool save_as_asset;
 
 	// Use this for initialization
 	void Start () {
@@ -244,6 +246,16 @@ public class readmesh : MonoBehaviour {
 		mesh.normals = normals;
 
 		*/
+		if (save_as_asset) {
+			AssetDatabase.CreateAsset(mesh, "Assets/Prefabs/"+ filesetName+".asset");
+			AssetDatabase.SaveAssets();
+			//PrefabUtility.CreatePrefab (dir_path + filesetName + ".prefab",plane);
+			//plane.GetComponent<MeshFilter>().mesh = mesh;
+
+			UnityEngine.Object prefab = EditorUtility.CreateEmptyPrefab("Assets/Prefabs/"+ filesetName+".prefab");
+			EditorUtility.ReplacePrefab(plane, prefab, ReplacePrefabOptions.ReplaceNameBased);
+		}
+		
 	}
 	
 	// Update is called once per frame
