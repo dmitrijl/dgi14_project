@@ -3,6 +3,7 @@ using UnityEditor;
 using System.Collections;
 using System.IO;
 using System;
+using System.Collections.Generic;
 
 public class readmesh : MonoBehaviour {
 
@@ -13,48 +14,167 @@ public class readmesh : MonoBehaviour {
 	public float z_base;
 	public bool save_as_asset;
 	public bool read_mesh;
+	public bool colorize;
+	public bool flattenBuildings;
 
-	// Use this for initialization
-	void Start () {
-		Mesh mesh;
-		//Debug.Log("Running script!!!\n");
-		if (!read_mesh) {
-			Debug.Log("Skipped reading mesh from file.\n");
-			Debug.Log("Loading from asset database...\n");
-			mesh = AssetDatabase.LoadAssetAtPath("Assets/Prefabs/Stadsholmen/res.asset", typeof(Mesh)) as Mesh;
-			plane.GetComponent<MeshFilter>().mesh = mesh;
-			return;
+	public enum BuildingDetection{None, AbsoluteHeight, NeighborHeight};
+	public BuildingDetection buildingDetection;
+	public float heightLimit;
+
+
+	private static class Classification {
+		public const int Unclassified=1;
+		public const int Ground=2;
+		public const int Water=9;
+		public const int Bridge=11;
+		public const int Building=21;
+	}
+
+	private Mesh mesh;
+	private string dir_path;
+	//private int lc = 0;
+	private bool sepNodeFile;
+	private string[] words;
+	//private int dim;	//Must be 2. Not currently used, though.
+	private int nrVert, nrAttr, nrBM;
+	private Vector3[] vertices;
+	private Vector2[] UV;
+	private int[] triangles;
+	private Char[] delim = {' '};
+	private int[] classifications;
+
+
+	//Prints the vertices
+	void debugVertices() {
+		Debug.Log("The vertices are:\n");
+		Debug.Log(vertices);
+		foreach (Vector3 v3 in vertices) {
+			Debug.Log(v3.x);
+			Debug.Log(v3.y);
+			Debug.Log(v3.z);
 		}
-		string dir_path;
-		string inp_ln;
-		//dir_path = @"C:\Users\Dmitrij\Documents\KTH\dgi\TriangleUnity\Assets\polyfiles\";	//Change as appropriate
-		dir_path = "Assets/polyfiles/";	//Change as appropriate
-		int lc = 0;
-		bool sepNodeFile = false;
-		string[] words;
-		//int iinp;	//Integer input holder
-		//double dinp;	//Floating point input holder
-		//int dim;	//Must be 2. Not currently used, though.
-		int nrVert, nrAttr, nrBM;
-		Vector3[] vertices;
-		Vector2[] UV = new Vector2[0];
-		int[] triangles;
-		Char[] delim = {' '};
-		int[] classifications = new int[0];
+	}
+
+	//Prints the triangles
+	void debugTriangles() {
+		Debug.Log("The triangles are:\n");
+		Debug.Log(triangles);
+		for (int i = 0; i<triangles.Length; ++i) {
+			Debug.Log(triangles[i]);
+		}
+	}
+
+	//Converts the triangles into edge lists (each triangle consisting of three edges)
+	void trianglesToEdges(int nrVert, ref int[] t, out List<int>[] nbl) {
+		//Convert triangles to edges. Each triangle is three edges
+		nbl = new List<int>[nrVert];
+		for (int i = 0;i<nrVert;++i) {
+			nbl[i] = new List<int>();
+		}
+		int n1, n2;
+		for (int i = 0;i<t.Length;i+=3) {
+			for (int j = 0;j<3;++j) {
+				for (int k = 0;k<3;++k) {
+					if (j == k) continue;
+					n1 = t[i+j];
+					n2 = t[i+k];
+					nbl[n1].Add(n2);
+				}
+			}
+		}
+	}
+
+	void removeSpikes(ref Vector3[] v, ref List<int>[] nbLists, float hl, ref int[] c) {
+		for (int n1 = 0;n1<nbLists.Length;++n1) {
+			for (int j = 0;j<nbLists[n1].Count;++j) {
+				int n2 = nbLists[n1][j];
+				if (v[n1].y > hl) {
+					v[n1].y = v[n2].y;
+				}
+			}
+		}
+	}
+
+	//Detects building using the neighbor height method
+	void detectBuildingsNH(ref Vector3[] v, ref List<int>[] nbLists, float hl, ref int[] c, bool flatten=true) {
+		//Debug.Log ("Size of v, nbLists and c are " + v.Length + ", " + nbLists.Length + " and " + c.Length);
+
+		//Copy of heights
+		float[] heights = new float[v.Length];
+		for (int i = 0;i<v.Length;++i) {
+			heights[i] = v[i].y;
+		}
 
 
-		string polyname = filesetName + "/" + fileName;
-		//Read poly file
-		StreamReader inp_stm = new StreamReader(dir_path + polyname + ".1.poly");
+		//Look for great height differences between neighboring vertices
+		int n1, n2;
+		float avgH;
+		int nrDiffs;
+		int changes;
+		for (int i = 0;i<1;++i) {
+			changes = 0;
+			for (n1 = 0; n1<nbLists.Length; ++n1) {
+				avgH = 0.0f;
+				nrDiffs = 0;
+				for (int j = 0; j<nbLists[n1].Count; ++j) {
+					n2 = nbLists[n1][j];
+
+					if (heights[n1] - heights[n2] > hl && (c[n2] != Classification.Water || 
+					                                       c[n2] != Classification.Unclassified) && 
+					                                      (c[n1] == Classification.Building || 
+					                                       c[n1] == Classification.Ground) ) {
+						avgH += heights[n2];
+						++nrDiffs;
+					}
+				}
+				if (avgH > 0.0f) {
+					avgH /= nrDiffs;
+					heights[n1] = avgH;
+					c[n1] = Classification.Building;
+					++changes;
+				}
+			}
+			//Debug.Log("Iteration " + (i+1) + ": Number of changes: " + changes);
+		}
+
+
+		float diff = 0.0f;
+		nrDiffs = 0;
+		if (flatten) {
+			for (int i = 0;i<v.Length;++i) {
+				if (v[i].y != heights[i]) {
+					diff += Math.Abs(v[i].y - heights[i]);
+					++nrDiffs;
+				}
+				v[i].y = heights[i];
+			}
+		}
+		//Debug.Log("Average diff: " + diff/nrDiffs);
+
+	}
+
+	//Detects building using the absolute height method
+	void detectBuildingsAH(ref Vector3[] v, float hl, ref int[] c) {
+		for (int j = 0; j < v.Length; ++j) {
+			if (v[j].y > hl) {
+				c[j] = Classification.Building;	//High point
+			}
+		}
+	}
+
+
+	//Reads and parses a .poly file
+	void readPolyFile(string fPath) {
 		Debug.Log("Reading POLY file!");
-		inp_ln = inp_stm.ReadLine( );	//Read line about vertices
+		StreamReader inp_stm = new StreamReader(fPath);
+		string inp_ln = inp_stm.ReadLine( );	//Read line about vertices
 		words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
 		int.TryParse(words[0], out nrVert);
 		//int.TryParse(words[1], out dim);
 		int.TryParse(words[2], out nrAttr);
 		--nrAttr;	//To compensate for the fact that height is an attribute
 		int.TryParse(words[3], out nrBM);
-
+		
 		vertices = new Vector3[nrVert];
 		if (nrVert == 0) {
 			sepNodeFile = true;	//Separate node file exists
@@ -76,7 +196,7 @@ public class readmesh : MonoBehaviour {
 				}
 			}
 		}
-
+		
 		//Read line about segments
 		inp_ln = inp_stm.ReadLine( );
 		words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
@@ -87,65 +207,59 @@ public class readmesh : MonoBehaviour {
 			inp_ln = inp_stm.ReadLine( );
 			//TODO parse segments
 		}
-
+		
 		//Read line about holes
 		inp_ln = inp_stm.ReadLine( );
 		words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
 		int nrHoles;
 		int.TryParse (words [0], out nrHoles);
-
+		
 		for (int i = 0;i < nrHoles; ++i) {
 			inp_ln = inp_stm.ReadLine( );
 			//TODO parse holes
 		}
+	}
 
-
-
-
-
-		//Read node file (if necessary)
-		if (sepNodeFile) {
-			inp_stm = new StreamReader(dir_path + polyname + ".1.node");
-			Debug.Log("Reading NODE file!");
-			inp_ln = inp_stm.ReadLine( );	//Read line about vertices
+	
+	//Reads and parses a .node file
+	void readNodeFile(string fPath) {
+		Debug.Log("Reading NODE file!");
+		StreamReader inp_stm = new StreamReader(fPath);
+		string inp_ln = inp_stm.ReadLine( );	//Read line about vertices
+		words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
+		int.TryParse(words[0], out nrVert);
+		//int.TryParse(words[1], out dim);
+		int.TryParse(words[2], out nrAttr);
+		--nrAttr;	//To compensate for the fact that height is an attribute
+		int.TryParse(words[3], out nrBM);
+		
+		vertices = new Vector3[nrVert];
+		classifications = new int[nrVert];
+		
+		for (int i = 0;i<nrVert;++i) {
+			inp_ln = inp_stm.ReadLine( );	//Read vertex line
 			words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
-			int.TryParse(words[0], out nrVert);
-			//int.TryParse(words[1], out dim);
-			int.TryParse(words[2], out nrAttr);
-			--nrAttr;	//To compensate for the fact that height is an attribute
-			int.TryParse(words[3], out nrBM);
-			
-			vertices = new Vector3[nrVert];
-			classifications = new int[nrVert];
-			
-			for (int i = 0;i<nrVert;++i) {
-				inp_ln = inp_stm.ReadLine( );	//Read vertex line
-				words = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
-				float.TryParse(words[1], out vertices[i].x);
-				float.TryParse(words[2], out vertices[i].z);
-				float.TryParse(words[3], out vertices[i].y);
-				float attr, bm;	//Dummy placeholders for now
-				for (int k = 4;k<4+nrAttr;++k) {
-					float.TryParse(words[k], out attr);
-					classifications[i] = (int)attr;
-				}
-				for (int k = 4+nrAttr;k<4+nrAttr+nrBM;++k) {
-					float.TryParse(words[k], out bm);
-				}
+			float.TryParse(words[1], out vertices[i].x);
+			float.TryParse(words[2], out vertices[i].z);
+			float.TryParse(words[3], out vertices[i].y);
+			float attr, bm;	//Dummy placeholders for now
+			for (int k = 4;k<4+nrAttr;++k) {
+				float.TryParse(words[k], out attr);
+				classifications[i] = (int)attr;
 			}
-			inp_stm.Close( );
+			for (int k = 4+nrAttr;k<4+nrAttr+nrBM;++k) {
+				float.TryParse(words[k], out bm);
+			}
 		}
+		inp_stm.Close( );
+	}
 
 
-
-
-
-
-
-		//Read ele file (triangles)
-		inp_stm = new StreamReader(dir_path + polyname + ".1.ele");
+	//Reads and parses a .ele file
+	void readEleFile(string fPath) {
 		Debug.Log("Reading ELE file!");
-		inp_ln = inp_stm.ReadLine ();
+		StreamReader inp_stm = new StreamReader(fPath);
+		string inp_ln = inp_stm.ReadLine ();
 		string[] meta = inp_ln.Split(delim, StringSplitOptions.RemoveEmptyEntries);
 		if (meta.Length != 3) {
 			Debug.Log("First line has more than 3 entries...");
@@ -167,22 +281,43 @@ public class readmesh : MonoBehaviour {
 		
 		triangles = (int[])triArray.ToArray (typeof(int));
 		inp_stm.Close( );
+	}
 
 
-
-
-		//Debug everything
-		/*Debug.Log("This is the read result:\n");
-		Debug.Log(vertices);
-		foreach (Vector3 v3 in vertices) {
-			Debug.Log(v3.x);
-			Debug.Log(v3.y);
-			Debug.Log(v3.z);
+	// Use this for initialization
+	void Start () {
+		//Debug.Log("Running script!!!\n");
+		if (!read_mesh) {
+			Debug.Log("Skipped reading mesh from file.\n");
+			Debug.Log("Loading from asset database...\n");
+			mesh = AssetDatabase.LoadAssetAtPath("Assets/Prefabs/Stadsholmen/res.asset", typeof(Mesh)) as Mesh;
+			plane.GetComponent<MeshFilter>().mesh = mesh;
+			return;
 		}
-		Debug.Log(triangles);
-		for (int i = 0; i<triangles.Length; ++i) {
-			Debug.Log(triangles[i]);
-		}*/
+
+		dir_path = "Assets/polyfiles/";	//Change as appropriate
+		UV = new Vector2[0];
+		classifications = new int[0];
+		sepNodeFile = false;
+		string polyname = filesetName + "/" + fileName;
+		StreamReader inp_stm;
+
+		//Read poly file
+		readPolyFile(dir_path + polyname + ".1.poly");
+
+		//Read node file (if necessary)
+		if (sepNodeFile) {
+			readNodeFile(dir_path + polyname + ".1.node");
+		}
+
+		//Read ele file (triangles)
+		readEleFile(dir_path + polyname + ".1.ele");
+
+
+		//Debug vertices and triangles
+		//debugVertices();
+		//debugTriangles();
+
 
 		float verticesMinX = 9999999999.0f;
 		float verticesMaxX = -99999999999.0f;
@@ -226,9 +361,22 @@ public class readmesh : MonoBehaviour {
 		}
 		*/
 
+
+		//Create an edge list for building and spike detection and eventually other things
+		List<int>[] nbList;
+		trianglesToEdges(vertices.Length, ref triangles, out nbList);
+
+		//Apply building detection (or not)
+		if (buildingDetection == BuildingDetection.NeighborHeight) {
+			detectBuildingsNH(ref vertices, ref nbList, heightLimit, ref classifications, flattenBuildings);
+		} else if (buildingDetection == BuildingDetection.AbsoluteHeight) {
+			detectBuildingsAH(ref vertices, heightLimit, ref classifications);
+		}
+		removeSpikes(ref vertices, ref nbList, 50.0f, ref classifications);
+
+
 		mesh = new Mesh();
 		plane.GetComponent<MeshFilter>().mesh = mesh;
-		//plane.GetComponent<MeshFilter>().mesh = mesh;
 		mesh.vertices = vertices;
 		//mesh.uv = UV;
 		Array.Reverse (triangles);
@@ -241,38 +389,44 @@ public class readmesh : MonoBehaviour {
 		}
 		mesh.uv = uvs;
 
-		//Colors
-		Color32[] colors = new Color32[vertices.Length];
-		for (int j = 0; j < vertices.Length; ++j) {
-			//colors[j] = Color.Lerp(Color.red, Color.green, vertices[j].y);	//Unity example
-			if (j < 100) {
-				Debug.Log("Classification: " + classifications[j]);
+
+		if (colorize) {
+			//Color the vertices
+			Color32[] colors = new Color32[vertices.Length];
+			for (int j = 0; j < vertices.Length; ++j) {
+				//colors[j] = Color.Lerp(Color.red, Color.green, vertices[j].y);	//Unity example
+				if (j < 100) {
+					//Debug.Log("Classification: " + classifications[j]);
+				}
+				switch (classifications[j]) {
+				case Classification.Unclassified:
+					//Debug.LogError("Unknown classification: " + classifications[j]);
+					colors[j] = (Color32)Color.red;
+					break;
+				case Classification.Ground:
+					//Ground
+					colors[j] = (Color32)Color.grey;
+					break;
+				case Classification.Water:
+					//Water
+					colors[j] = (Color32)Color.blue;
+					break;
+				case Classification.Bridge:
+					//Bridge
+					colors[j] = (Color32)Color.white;
+					break;
+				case Classification.Building:
+					//Points with great height (custom)
+					colors[j] = (Color32)Color.magenta;
+					break;
+				default:
+					//Debug.LogError("Unrecognized classification: " + classifications[j]);
+					colors[j] = (Color32)Color.yellow;
+					break;
+				}
 			}
-			switch (classifications[j]) {
-			case 1:
-				//Unknown Do nothing for now
-				//Debug.LogError("Unknown classification: " + classifications[j]);
-				colors[j] = (Color32)Color.red;
-				break;
-			case 2:
-				//Ground
-				colors[j] = (Color32)Color.grey;
-				break;
-			case 9:
-				//Water
-				colors[j] = (Color32)Color.blue;
-				break;
-			case 11:
-				//Bridge
-				colors[j] = (Color32)Color.white;
-				break;
-			default:
-				//Debug.LogError("Unrecognized classification: " + classifications[j]);
-				colors[j] = (Color32)Color.yellow;
-				break;
-			}
+			mesh.colors32 = colors;
 		}
-		mesh.colors32 = colors;
 
 		
 		
