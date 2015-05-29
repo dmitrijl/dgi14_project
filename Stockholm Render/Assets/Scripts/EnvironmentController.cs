@@ -60,14 +60,23 @@ public class EnvironmentController : MonoBehaviour {
 	
 	//Remove big spikes
 	void removeSpikes(ref Vector3[] v, ref List<int>[] nbLists, float hl, ref int[] c) {
+		for (int i = 0;i<v.Length;++i) {
+			//if (v[i].y > 100.0f) Debug.Log("Vertex " + i + " has height " + v[i].y);
+		}
+
+		int count = 0;
+		float greatestChange = -1f;
 		for (int n1 = 0;n1<nbLists.Length;++n1) {
 			for (int j = 0;j<nbLists[n1].Count;++j) {
 				int n2 = nbLists[n1][j];
 				if (v[n1].y > hl) {
+					greatestChange = Math.Max (greatestChange, Math.Abs(v[n1].y - v[n2].y));
 					v[n1].y = v[n2].y;
+					++count;
 				}
 			}
 		}
+		//Debug.Log("Number of changes: " + count + ", greatest change: " + greatestChange);
 	}
 	
 	//Detects building using the neighbor height method
@@ -150,12 +159,6 @@ public class EnvironmentController : MonoBehaviour {
 			classifications[i] = originalClassifications[i];
 		}
 
-		if (spikeRemoval) {
-			removeSpikes (ref vertices, ref nbList, 50.0f, ref classifications);
-		}
-
-		if (bd == BuildingDetection.None) return;
-
 		//Select algorithm
 		if (buildingDetection == BuildingDetection.NeighborHeight) {
 			detectBuildingsNH(ref vertices, ref nbList, heightLimit, ref classifications);
@@ -176,6 +179,10 @@ public class EnvironmentController : MonoBehaviour {
 			}
 		}
 		//Debug.Log("Average diff: " + diff/nrDiffs);
+
+		if (spikeRemoval) {
+			removeSpikes (ref vertices, ref nbList, 50.0f, ref classifications);
+		}
 	}
 
 
@@ -200,9 +207,7 @@ public class EnvironmentController : MonoBehaviour {
 		//Create an edge list for building and spike detection and eventually other things
 		trianglesToEdges(vertices.Length, ref triangles, out nbList);
 		processModel(buildingDetection);
-		if (spikeRemoval) {
-			removeSpikes (ref vertices, ref nbList, 50.0f, ref classifications);
-		}
+
 
 		//Apply changes
 		//mesh = new Mesh();
