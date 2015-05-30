@@ -28,9 +28,9 @@ public class HUD : MonoBehaviour {
 		"Z: Rotate CCW",
 		"C: Rotate CW",
 		"X: Rotate forward-upward",
-		"Press the right mouse button and",
-		"move the mouse to look around",
-		"Hold left shift to move/update faster"
+		"Press and hold the left mouse button",
+		"and move the mouse to look around.",
+		"Hold left shift to move/update faster."
 	};
 
 	private readonly string waterLevelText = "Water level: ";
@@ -55,12 +55,12 @@ public class HUD : MonoBehaviour {
 			int labelH = 500;
 
 			GUI.skin.label.normal.textColor = Color.black;
-			GUI.Label( new Rect(1, 2, labelW, labelH), labelText);
-			GUI.Label( new Rect(2, 1, labelW, labelH), labelText);
-			GUI.Label( new Rect(2, 2, labelW, labelH), labelText);
+			GUI.Label( new Rect(6, 4, labelW, labelH), labelText);
+			GUI.Label( new Rect(7, 3, labelW, labelH), labelText);
+			GUI.Label( new Rect(7, 4, labelW, labelH), labelText);
 			
 			GUI.skin.label.normal.textColor = Color.white;
-			GUI.Label( new Rect(1, 1, labelW, labelH), labelText);
+			GUI.Label( new Rect(6, 3, labelW, labelH), labelText);
 
 
 
@@ -80,12 +80,12 @@ public class HUD : MonoBehaviour {
 						toggleSpikesText + (removeSpikes ? "on" : "off");
 
 			GUI.skin.label.normal.textColor = Color.black;
-			GUI.Label( new Rect(Screen.width-1-labelW, 2, labelW, labelH), labelText);
-			GUI.Label( new Rect(Screen.width-2-labelW, 1, labelW, labelH), labelText);
-			GUI.Label( new Rect(Screen.width-2-labelW, 2, labelW, labelH), labelText);
+			GUI.Label( new Rect(Screen.width-3-labelW, 4, labelW, labelH), labelText);
+			GUI.Label( new Rect(Screen.width-4-labelW, 3, labelW, labelH), labelText);
+			GUI.Label( new Rect(Screen.width-4-labelW, 4, labelW, labelH), labelText);
 			
 			GUI.skin.label.normal.textColor = Color.white;
-			GUI.Label( new Rect(Screen.width-1-labelW, 1, labelW, labelH), labelText);
+			GUI.Label( new Rect(Screen.width-3-labelW, 3, labelW, labelH), labelText);
 		}
 	}
 	

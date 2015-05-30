@@ -224,6 +224,8 @@ public class EnvironmentController : MonoBehaviour {
 		}
 		float uc = us * Time.deltaTime;
 
+		bool needProcessing = false;
+
 		if(Input.GetKeyDown (KeyCode.Alpha1)) {
 			//Toggle static water
 			water.SetActive(!water.activeSelf);
@@ -242,43 +244,47 @@ public class EnvironmentController : MonoBehaviour {
 		if(Input.GetKeyDown (KeyCode.Alpha4)) {
 			//Toggle building flattening
 			flattenBuildings = !flattenBuildings;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 		
 		if(Input.GetKeyDown (KeyCode.Alpha5)) {
 			//Use no building detection
 			buildingDetection = BuildingDetection.None;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 		
 		if(Input.GetKeyDown (KeyCode.Alpha6)) {
 			//Use absolute height building detection
 			buildingDetection = BuildingDetection.AbsoluteHeight;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 
 		if(Input.GetKeyDown (KeyCode.Alpha7)) {
 			//Use neighbor height building detection
 			buildingDetection = BuildingDetection.NeighborHeight;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 		
 		if(Input.GetKey (KeyCode.Alpha8)) {
 			//Decrease height limit for building detection
 			heightLimit -= uc;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 		
 		if(Input.GetKey (KeyCode.Alpha9)) {
 			//Increase height limit for building detection
 			heightLimit += uc;
-			processModel(buildingDetection);
+			needProcessing = true;
 		}
 
 		if(Input.GetKeyDown (KeyCode.Alpha0)) {
 			//Toggle spike removal
 			spikeRemoval = !spikeRemoval;
-			processModel(buildingDetection);
+			needProcessing = true;
+		}
+
+		if (needProcessing) {
+			processModel (buildingDetection);
 		}
 
 		if(Input.GetKey (KeyCode.Escape)) {
