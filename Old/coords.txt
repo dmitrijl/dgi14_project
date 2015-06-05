@@ -1,0 +1,31 @@
+
+59.3256954 Latitude
+18.0718675 Longitude
+
+
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:road|visibility:off
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off
+
+Wohoo!
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=600x600&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off&style=feature:water|element:labels|visibility:off
+
+API key:
+AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd 
+
+http://dev.virtualearth.net/REST/v1/Imagery/Map/imagerySet/centerPoint/zoomLevel?mapSize=mapSize&pushpin=pushpin&mapLayer=mapLayer&format=format&mapMetadata=mapMetadata&key=BingMapsKey
+http://dev.virtualearth.net/REST/v1/Imagery/Map/imagerySet/59.3256954,18.071867/13?key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
+http://dev.virtualearth.net/REST/v1/Imagery/Map/AerialWithLabels/59.3256954,18.071867/13?key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd 
+http://dev.virtualearth.net/REST/v1/Imagery/Metadata/Aerial/59.3256954,18.071867/13?key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd 
+
+https://dev.virtualearth.net/REST/V1/Imagery/Metadata/Aerial/59.3256954,18.071867?zl=13&o=xml&key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd 
+
+SWNE
+http://dev.virtualearth.net/REST/v1/Imagery/Map/Aerial?mapArea=59.1,17.9,59.5,18.3&key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
+
+YES:
+
+https://maps.googleapis.com/maps/api/staticmap?center=59.3256954,18.0718675&zoom=13&size=350x350&style=feature:transit|visibility:off&style=feature:road|visibility:off&style=feature:poi|visibility:off&style=feature:administrative|visibility:off&style=feature:landscape|visibility:off&style=feature:water|element:labels|visibility:off
+dev.virtualearth.net/REST/v1/Imagery/Map/Road/59.3256954,18.071867/13?key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
+https://dev.virtualearth.net/REST/v1/Imagery/Map/Aerial/59.3256954,18.071867/13?mapMetadata=1&o=xml&key=AjUIBkWcYNgWkGX7-xRkTLaW09pxQMzq2XED7K2_Sz6NLajFcRHX-p-N0PL1jUpd
+
