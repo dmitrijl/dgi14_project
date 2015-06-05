@@ -10,7 +10,7 @@ The files at the root are files that were used to produce the current state of t
 
 The Old map contains files and data that were used previously, but not in the current state.
 
-The Images map contains image from the entire work process.
+The Images map contains images from the entire work process.
 
 
 Visit our blog at:
