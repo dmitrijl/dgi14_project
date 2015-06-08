@@ -20,4 +20,7 @@ https://stockholmrender.wordpress.com/
 Also, see the github repository at:
 https://github.com/dmitrijl/dgi14_project
 
+Interactive demo at
+http://www.csc.kth.se/~khallq/Stockholm_Render.html
+
 
