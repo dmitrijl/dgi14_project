@@ -12,8 +12,12 @@ The Old map contains files and data that were used previously, but not in the cu
 
 The Images map contains images from the entire work process.
 
+Report.pdf is a summary of the project.
 
 Visit our blog at:
 https://stockholmrender.wordpress.com/
+
+Also, see the github repository at:
+https://github.com/dmitrijl/dgi14_project
 
 
