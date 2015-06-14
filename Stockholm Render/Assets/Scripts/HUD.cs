@@ -19,6 +19,8 @@ public class HUD : MonoBehaviour {
 		"7: Use neighbor height building detection",
 		"8: Decrease height limit (for building detection)",
 		"9: Increase height limit (for building detection)",
+		"0: Toggle spike removal",
+		"H: Toggle height map mode",
 		"W: Move forward",
 		"S: Move backward",
 		"A: Move rightward",
@@ -27,7 +29,7 @@ public class HUD : MonoBehaviour {
 		"E: Move upward",
 		"Z: Rotate CCW",
 		"C: Rotate CW",
-		"X: Rotate forward-upward",
+		"X: Rotate forward-upward 90 degrees",
 		"Press and hold the left mouse button",
 		"and move the mouse to look around.",
 		"Hold left shift to move/update faster."
@@ -38,6 +40,7 @@ public class HUD : MonoBehaviour {
 	private readonly string buildingDetectionText = "Building detection method: ";
 	private readonly string isFlattenedText = "Flatten buildings: ";
 	private readonly string toggleSpikesText = "Spike removal: ";
+	private readonly string heightMapText = "Heigh Map mode: ";
 	
 	// Use this for initialization
 	void Start () {
@@ -72,12 +75,14 @@ public class HUD : MonoBehaviour {
 			string buildingDetection = envCtrl.GetComponent<EnvironmentController>().buildingDetection.ToString();
 			bool flatten = envCtrl.GetComponent<EnvironmentController>().flattenBuildings;
 			bool removeSpikes = envCtrl.GetComponent<EnvironmentController>().spikeRemoval;
+			bool heightMapMode = envCtrl.GetComponent<EnvironmentController>().heightMapMode;
 
 			labelText = waterLevelText + waterLevel + '\n' + 
 						heightLimitText + heightLimit + '\n' +
 						buildingDetectionText + buildingDetection + '\n' +
 						isFlattenedText + (flatten ? "on" : "off") + '\n' +
-						toggleSpikesText + (removeSpikes ? "on" : "off");
+						toggleSpikesText + (removeSpikes ? "on" : "off") + '\n' +
+						heightMapText + (heightMapMode ? "on" : "off");
 
 			GUI.skin.label.normal.textColor = Color.black;
 			GUI.Label( new Rect(Screen.width-3-labelW, 4, labelW, labelH), labelText);

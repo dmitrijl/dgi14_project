@@ -14,6 +14,7 @@ public class EnvironmentController : MonoBehaviour {
 	public BuildingDetection buildingDetection;
 	public float heightLimit;
 	public bool spikeRemoval;
+	public bool heightMapMode;
 
 	public readonly float updateSpeed = 2f;
 	public readonly float shiftSpeedIncreaseFactor = 4;
@@ -123,8 +124,6 @@ public class EnvironmentController : MonoBehaviour {
 			}
 		}
 	}
-	
-
 
 
 	//Update the mesh
@@ -139,8 +138,27 @@ public class EnvironmentController : MonoBehaviour {
 
 		//Color the vertices
 		if (colorize) {
-			for (int j = 0; j < vertices.Length; ++j) {
-				colors [j] = MeshReader.Classification.intToColor32 (classifications [j]);
+			if (heightMapMode == true) {
+
+				for (int j = 0; j < vertices.Length; ++j) {
+					if (classifications[j] == MeshReader.Classification.Building) {
+						byte y = (byte)Math.Min((int)mesh.vertices[j].y, 255);
+						//byte y = (byte)mesh.vertices[j].y;
+
+						if (y == 255) {
+							//Debug.Log("byte y is 255, float value was " + mesh.vertices[j].y);
+						}
+
+						//colors[j] = (Color32)Color.cyan;
+						colors[j] = new Color32(y, y, y, 255);
+					} else {
+						colors[j] = (Color32)Color.black;
+					}
+				}
+			} else {
+				for (int j = 0; j < vertices.Length; ++j) {
+					colors [j] = MeshReader.Classification.intToColor32 (classifications [j]);
+				}
 			}
 		} else {
 			for (int j = 0; j < vertices.Length; ++j) {
@@ -148,6 +166,7 @@ public class EnvironmentController : MonoBehaviour {
 			}
 		}
 		mesh.colors32 = colors;
+
 	}
 
 
@@ -166,7 +185,7 @@ public class EnvironmentController : MonoBehaviour {
 			detectBuildingsAH(ref vertices, heightLimit, ref classifications);
 		}
 
-		//Restore orignialHeights or use the new ones
+		//Restore originalHeights or use the new ones
 		float diff = 0.0f;
 		int nrDiffs = 0;
 		if (!flattenBuildings) {
@@ -204,7 +223,7 @@ public class EnvironmentController : MonoBehaviour {
 			orignialHeights[i] = vertices[i].y;
 		}
 
-		//Create an edge list for building and spike detection and eventually other things
+		//Create an edge list for building and spike detection and maybe other things
 		trianglesToEdges(vertices.Length, ref triangles, out nbList);
 		processModel(buildingDetection);
 
@@ -213,11 +232,15 @@ public class EnvironmentController : MonoBehaviour {
 		//mesh = new Mesh();
 		//plane.GetComponent<MeshFilter>().mesh = mesh;
 		updateMesh();
+
+		//Application.CaptureScreenshot("StockholmRender.png");
 	}
 	
 
 	// Update is called once per frame
 	void Update () {
+		//return;
+
 		float us = updateSpeed;
 		if (Input.GetKey (KeyCode.LeftShift) == true) {
 			us *= shiftSpeedIncreaseFactor;
@@ -280,6 +303,12 @@ public class EnvironmentController : MonoBehaviour {
 		if(Input.GetKeyDown (KeyCode.Alpha0)) {
 			//Toggle spike removal
 			spikeRemoval = !spikeRemoval;
+			needProcessing = true;
+		}
+
+		if(Input.GetKeyDown (KeyCode.H)) {
+			//Toggle heightmap mode
+			heightMapMode = !heightMapMode;
 			needProcessing = true;
 		}
 
