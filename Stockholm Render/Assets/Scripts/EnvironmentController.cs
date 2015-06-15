@@ -9,6 +9,7 @@ public class EnvironmentController : MonoBehaviour {
 	public GameObject water, plane;
 	public bool colorize;
 	public bool flattenBuildings;
+	public bool flattenAll;
 
 	public enum BuildingDetection{None, AbsoluteHeight, NeighborHeight};
 	public BuildingDetection buildingDetection;
@@ -56,6 +57,13 @@ public class EnvironmentController : MonoBehaviour {
 			if (c[i] == MeshReader.Classification.Water) {
 				v[i].y = -1.0f;
 			}
+		}
+	}
+
+	//Set the hgieht of all vertices to zero
+	void flattenEverything(ref Vector3[] v) {
+		for (int i = 0;i<v.Length;++i) {
+			v[i].y = 0.0f;
 		}
 	}
 	
@@ -167,6 +175,10 @@ public class EnvironmentController : MonoBehaviour {
 		}
 		mesh.colors32 = colors;
 
+		if (flattenAll) {
+			flattenEverything(ref vertices);
+			mesh.vertices = vertices;
+		}
 	}
 
 
@@ -233,13 +245,13 @@ public class EnvironmentController : MonoBehaviour {
 		//plane.GetComponent<MeshFilter>().mesh = mesh;
 		updateMesh();
 
-		//Application.CaptureScreenshot("StockholmRender.png");
+		Application.CaptureScreenshot("building_heightmap.png");
 	}
 	
 
 	// Update is called once per frame
 	void Update () {
-		//return;
+		return;
 
 		float us = updateSpeed;
 		if (Input.GetKey (KeyCode.LeftShift) == true) {
